@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KeywordPilot AI - AI SEO & Keyword Research Tool</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            400: '#2dd4bf',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            900: '#134e4a',
+                        },
+                        darkbg: '#0f172a',
+                        cardbg: '#1e293b',
+                        borderbg: '#334155'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js for Visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom styling & scrollbar -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        /* Custom Tooltip */
+        .tooltip {
+            position: relative;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #020617;
+            color: #e2e8f0;
+            text-align: center;
+            border-radius: 6px;
+            padding: 6px 10px;
+            position: absolute;
+            z-index: 50;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            font-size: 11px;
+            border: 1px solid #334155;
+            pointer-events: none;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between text-slate-100">
+
+    <!-- TOP HEADER / NAV -->
+    <header class="border-b border-slate-800 bg-slate-900/90 sticky top-0 z-40 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-teal-500/20">
+                    <i data-lucide="compass" class="w-6 h-6 text-white"></i>
+                </div>
+                <div>
+                    <span class="font-bold text-xl tracking-tight bg-gradient-to-r from-teal-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">KeywordPilot AI</span>
+                    <span class="hidden sm:inline-block text-xs px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/20 ml-2 font-medium">SEO Suite v2.4</span>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <!-- Status Indicator Badge -->
+                <button onclick="openSettingsModal()" class="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700/80 border border-slate-700 text-xs transition duration-150">
+                    <span id="apiStatusDot" class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+                    <span id="apiStatusText" class="font-medium text-slate-300">Demo Simulation Mode</span>
+                    <i data-lucide="settings" class="w-3.5 h-3.5 text-slate-400 ml-1"></i>
+                </button>
+
+                <!-- Quick Clear Saved -->
+                <button id="savedCounterBtn" onclick="switchTab('saved')" class="relative flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-xs font-medium transition">
+                    <i data-lucide="bookmark" class="w-3.5 h-3.5"></i>
+                    <span>Saved</span>
+                    <span id="savedBadgeCount" class="ml-1 bg-indigo-500 text-white rounded-full px-1.5 py-0.2 text-[10px] font-bold">0</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- MAIN TABS -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 overflow-x-auto border-t border-slate-800/80 text-sm">
+            <button onclick="switchTab('generator')" id="tab-generator" class="tab-btn px-4 py-2.5 font-medium border-b-2 border-teal-400 text-teal-400 flex items-center space-x-2 whitespace-nowrap">
+                <i data-lucide="sparkles" class="w-4 h-4"></i>
+                <span>Keyword Generator</span>
+            </button>
+            <button onclick="switchTab('saved')" id="tab-saved" class="tab-btn px-4 py-2.5 font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap">
+                <i data-lucide="folder-kanban" class="w-4 h-4"></i>
+                <span>Saved Strategy Workspace</span>
+            </button>
+            <button onclick="switchTab('content')" id="tab-content" class="tab-btn px-4 py-2.5 font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap">
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+                <span>Content Plan & Meta Generator</span>
+            </button>
+            <button onclick="switchTab('api')" id="tab-api" class="tab-btn px-4 py-2.5 font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap">
+                <i data-lucide="database" class="w-4 h-4"></i>
+                <span>API & Source Info</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+
+        <!-- ================= TAB 1: KEYWORD GENERATOR ================= -->
+        <section id="view-generator" class="tab-content space-y-6">
+            
+            <!-- FORM SECTION -->
+            <div class="glass-panel rounded-2xl p-5 sm:p-6 shadow-2xl relative overflow-hidden">
+                <div class="absolute -right-10 -top-10 w-40 h-40 bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-slate-100 flex items-center gap-2">
+                        <i data-lucide="sliders" class="w-5 h-5 text-teal-400"></i>
+                        Target Parameters & Niche Parameters
+                    </h2>
+                    <span class="text-xs text-slate-400">Powered by Gemini AI Engine & SEO Rules</span>
+                </div>
+
+                <form id="keywordForm" onsubmit="handleGenerate(event)" class="space-y-4">
+                    <!-- Row 1: Topic / Seed Keyword -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                        <div class="lg:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Seed Keyword or Main Topic *</label>
+                            <div class="relative">
+                                <input type="text" id="seedTopic" required placeholder="e.g. digital marketing, cold brew coffee, SAAS SEO strategy..." 
+                                    class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-4 py-3 pl-11 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm">
+                                <i data-lucide="search" class="w-5 h-5 text-slate-500 absolute left-3.5 top-3.5"></i>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Target Platform</label>
+                            <select id="targetPlatform" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3.5 py-3 text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm">
+                                <option value="Google Search">Google Search</option>
+                                <option value="YouTube">YouTube Video Search</option>
+                                <option value="Instagram">Instagram / Social Hashtags</option>
+                                <option value="Facebook">Facebook Audience Search</option>
+                                <option value="Blog / Content Site">Blog & Niche Website</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Country, Language, Intent, Industry -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Target Country</label>
+                            <select id="targetCountry" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3 py-2.5 text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm">
+                                <option value="Global">Global / All Regions</option>
+                                <option value="Bangladesh">Bangladesh (BD)</option>
+                                <option value="United States">United States (US)</option>
+                                <option value="United Kingdom">United Kingdom (UK)</option>
+                                <option value="India">India (IN)</option>
+                                <option value="Canada">Canada (CA)</option>
+                                <option value="Australia">Australia (AU)</option>
+                                <option value="Germany">Germany (DE)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Language</label>
+                            <select id="targetLanguage" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3 py-2.5 text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm">
+                                <option value="English">English</option>
+                                <option value="Bengali">Bengali (বাংলা)</option>
+                                <option value="Spanish">Spanish</option>
+                                <option value="German">German</option>
+                                <option value="Hindi">Hindi</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Search Intent Focus</label>
+                            <select id="targetIntent" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3 py-2.5 text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm">
+                                <option value="All Intents">All Intents Mixed</option>
+                                <option value="Informational">Informational (How-to, Guides)</option>
+                                <option value="Commercial">Commercial (Best, Comparison)</option>
+                                <option value="Transactional">Transactional (Buy, Pricing, Deals)</option>
+                                <option value="Navigational">Navigational (Brand / Direct)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Quantity Ideas</label>
+                            <select id="keywordCount" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3 py-2.5 text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm">
+                                <option value="15">15 Strategic Keywords</option>
+                                <option value="25" selected>25 Strategic Keywords</option>
+                                <option value="35">35 Strategic Keywords</option>
+                                <option value="50">50 Comprehensive Ideas</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Row 3: Audience & Industry details -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Industry / Sub-niche (Optional)</label>
+                            <input type="text" id="targetIndustry" placeholder="e.g. E-commerce, B2B SaaS, Fitness, Travel"
+                                class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Target Audience Persona (Optional)</label>
+                            <input type="text" id="targetAudience" placeholder="e.g. Beginners, Marketing Managers, Remote Freelancers"
+                                class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm">
+                        </div>
+                    </div>
+
+                    <!-- Action Button -->
+                    <div class="flex items-center justify-between pt-2">
+                        <div class="flex items-center space-x-2 text-xs text-slate-400">
+                            <i data-lucide="shield-check" class="w-4 h-4 text-teal-400"></i>
+                            <span>Estimates clearly flagged • Zero metric fabrication policy</span>
+                        </div>
+                        <button type="submit" id="generateBtn" 
+                            class="px-6 py-3 rounded-xl bg-gradient-to-r from-teal-500 to-indigo-600 hover:from-teal-400 hover:to-indigo-500 text-white font-semibold text-sm shadow-lg shadow-teal-500/25 transition flex items-center space-x-2 disabled:opacity-50">
+                            <i data-lucide="sparkles" class="w-4 h-4"></i>
+                            <span>Generate Keyword Intelligence</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- LOADING SKELETON / SPINNER -->
+            <div id="loadingState" class="hidden glass-panel rounded-2xl p-10 text-center space-y-4">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-teal-500/10 text-teal-400 animate-spin mb-2">
+                    <i data-lucide="loader-2" class="w-8 h-8"></i>
+                </div>
+                <h3 class="text-lg font-medium text-slate-200">Analyzing Keyword Cluster & Search Intent...</h3>
+                <p class="text-xs text-slate-400 max-w-md mx-auto">Gemini AI is processing query semantics, calculating estimated difficulty, CPC, and intent mappings for your niche.</p>
+            </div>
+
+            <!-- RESULTS DASHBOARD -->
+            <div id="resultsDashboard" class="space-y-6 hidden">
+                
+                <!-- SUMMARY CARDS -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="glass-panel p-4 rounded-xl border-l-4 border-l-teal-400">
+                        <span class="text-xs text-slate-400 uppercase font-semibold">Total Keywords</span>
+                        <div class="text-2xl font-bold text-slate-100 mt-1" id="statTotalCount">0</div>
+                        <span class="text-[11px] text-teal-400">Multi-category cluster</span>
+                    </div>
+
+                    <div class="glass-panel p-4 rounded-xl border-l-4 border-l-indigo-400">
+                        <span class="text-xs text-slate-400 uppercase font-semibold">Avg Keyword Difficulty</span>
+                        <div class="text-2xl font-bold text-slate-100 mt-1" id="statAvgDiff">0/100</div>
+                        <span class="text-[11px] text-indigo-400" id="statDiffBadge">Moderate Competition</span>
+                    </div>
+
+                    <div class="glass-panel p-4 rounded-xl border-l-4 border-l-purple-400">
+                        <span class="text-xs text-slate-400 uppercase font-semibold">High-Value Opportunities</span>
+                        <div class="text-2xl font-bold text-slate-100 mt-1" id="statHighValueCount">0</div>
+                        <span class="text-[11px] text-purple-400">Low Diff & High Volume</span>
+                    </div>
+
+                    <div class="glass-panel p-4 rounded-xl border-l-4 border-l-amber-400">
+                        <span class="text-xs text-slate-400 uppercase font-semibold">Est. Monthly Reach</span>
+                        <div class="text-2xl font-bold text-slate-100 mt-1" id="statTotalVol">0</div>
+                        <span class="text-[11px] text-amber-400">Aggregated Search Volume</span>
+                    </div>
+                </div>
+
+                <!-- CHARTS ROW -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="glass-panel p-5 rounded-xl lg:col-span-1 flex flex-col justify-between">
+                        <h3 class="text-xs font-semibold uppercase text-slate-400 mb-2 flex items-center gap-1.5">
+                            <i data-lucide="pie-chart" class="w-4 h-4 text-teal-400"></i>
+                            Search Intent Distribution
+                        </h3>
+                        <div class="w-full h-48 flex items-center justify-center">
+                            <canvas id="intentChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel p-5 rounded-xl lg:col-span-2 flex flex-col justify-between">
+                        <h3 class="text-xs font-semibold uppercase text-slate-400 mb-2 flex items-center gap-1.5">
+                            <i data-lucide="bar-chart-2" class="w-4 h-4 text-indigo-400"></i>
+                            Keyword Volume vs Difficulty Spread
+                        </h3>
+                        <div class="w-full h-48">
+                            <canvas id="scatterChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FILTER TOOLBAR -->
+                <div class="glass-panel p-4 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs">
+                    <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+                        <!-- Search Keyword filter -->
+                        <div class="relative min-w-[200px]">
+                            <input type="text" id="filterText" oninput="applyFilters()" placeholder="Filter results..." 
+                                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 pl-8 text-slate-200 focus:outline-none focus:border-teal-500">
+                            <i data-lucide="filter" class="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5"></i>
+                        </div>
+
+                        <!-- Intent Filter -->
+                        <select id="filterIntent" onchange="applyFilters()" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-teal-500">
+                            <option value="ALL">All Search Intents</option>
+                            <option value="Informational">Informational</option>
+                            <option value="Commercial">Commercial</option>
+                            <option value="Transactional">Transactional</option>
+                            <option value="Navigational">Navigational</option>
+                        </select>
+
+                        <!-- Category/Type Filter -->
+                        <select id="filterCategory" onchange="applyFilters()" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-teal-500">
+                            <option value="ALL">All Categories</option>
+                            <option value="Primary">Primary Keywords</option>
+                            <option value="Secondary">Secondary Keywords</option>
+                            <option value="Long-Tail">Long-Tail Keywords</option>
+                            <option value="Question">Questions / PAA</option>
+                        </select>
+
+                        <!-- Difficulty Max slider -->
+                        <div class="flex items-center space-x-2 bg-slate-900 border border-slate-700 px-3 py-1 rounded-lg">
+                            <span class="text-slate-400">Max Diff: <span id="diffValLabel" class="text-teal-400 font-bold">100</span></span>
+                            <input type="range" id="filterDiff" min="0" max="100" value="100" oninput="updateDiffLabel(this.value); applyFilters();" class="w-20 accent-teal-500">
+                        </div>
+                    </div>
+
+                    <!-- BULK ACTION BUTTONS -->
+                    <div class="flex items-center space-x-2 w-full lg:w-auto justify-end">
+                        <button onclick="copySelectedKeywords()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium transition flex items-center space-x-1">
+                            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                            <span>Copy Selected</span>
+                        </button>
+                        <button onclick="exportToCSV()" class="px-3 py-1.5 rounded-lg bg-teal-600/20 hover:bg-teal-600/30 text-teal-300 border border-teal-500/30 font-medium transition flex items-center space-x-1">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                            <span>Export CSV</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- KEYWORD DATA TABLE -->
+                <div class="glass-panel rounded-xl overflow-hidden shadow-xl border border-slate-800">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-300">
+                            <thead class="bg-slate-900/90 uppercase text-[10px] text-slate-400 border-b border-slate-800 tracking-wider">
+                                <tr>
+                                    <th class="p-3.5 text-center w-10">
+                                        <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" class="rounded bg-slate-800 border-slate-700 accent-teal-500">
+                                    </th>
+                                    <th class="p-3.5 cursor-pointer hover:text-white" onclick="sortData('keyword')">
+                                        Keyword Idea <i data-lucide="arrow-up-down" class="w-3 h-3 inline ml-0.5"></i>
+                                    </th>
+                                    <th class="p-3.5">Type / Category</th>
+                                    <th class="p-3.5">Intent</th>
+                                    <th class="p-3.5 cursor-pointer hover:text-white" onclick="sortData('volume')">
+                                        Est. Search Vol <i data-lucide="arrow-up-down" class="w-3 h-3 inline ml-0.5"></i>
+                                    </th>
+                                    <th class="p-3.5 cursor-pointer hover:text-white" onclick="sortData('difficulty')">
+                                        Difficulty (KD) <i data-lucide="arrow-up-down" class="w-3 h-3 inline ml-0.5"></i>
+                                    </th>
+                                    <th class="p-3.5 cursor-pointer hover:text-white" onclick="sortData('cpc')">
+                                        Est. CPC ($) <i data-lucide="arrow-up-down" class="w-3 h-3 inline ml-0.5"></i>
+                                    </th>
+                                    <th class="p-3.5">Relevance & Rationale</th>
+                                    <th class="p-3.5 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="keywordTableBody" class="divide-y divide-slate-800/60 font-normal">
+                                <!-- Dynamic Rows Injected Here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- EMPTY FILTER STATE -->
+                    <div id="noResultsMsg" class="hidden p-8 text-center text-slate-400">
+                        <i data-lucide="search-x" class="w-8 h-8 mx-auto text-slate-600 mb-2"></i>
+                        <p class="text-sm">No keywords match your selected filters. Try resetting difficulty or search term.</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ================= TAB 2: SAVED WORKSPACE ================= -->
+        <section id="view-saved" class="tab-content space-y-6 hidden">
+            <div class="glass-panel p-6 rounded-2xl flex items-center justify-between">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
+                        <i data-lucide="bookmark" class="w-5 h-5 text-indigo-400"></i>
+                        Saved Keywords & Strategy Workspace
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">Curated list of target keywords for your ongoing content planning.</p>
+                </div>
+                <div class="flex space-x-2">
+                    <button onclick="copySavedKeywords()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition flex items-center space-x-1">
+                        <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                        <span>Copy Saved List</span>
+                    </button>
+                    <button onclick="clearSavedKeywords()" class="px-3 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 rounded-lg text-xs font-medium border border-rose-500/30 transition flex items-center space-x-1">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        <span>Clear List</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="glass-panel rounded-xl overflow-hidden border border-slate-800">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-900/90 uppercase text-[10px] text-slate-400 border-b border-slate-800">
+                            <tr>
+                                <th class="p-3.5">Keyword</th>
+                                <th class="p-3.5">Category</th>
+                                <th class="p-3.5">Intent</th>
+                                <th class="p-3.5">Est. Volume</th>
+                                <th class="p-3.5">Difficulty</th>
+                                <th class="p-3.5">Est. CPC</th>
+                                <th class="p-3.5 text-right">Remove</th>
+                            </tr>
+                        </thead>
+                        <tbody id="savedTableBody" class="divide-y divide-slate-800/60">
+                            <!-- Injected -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="savedEmptyState" class="p-12 text-center text-slate-500 space-y-2">
+                    <i data-lucide="folder-open" class="w-10 h-10 mx-auto text-slate-600"></i>
+                    <p class="text-sm font-medium">No saved keywords in your workspace yet.</p>
+                    <p class="text-xs">Click the bookmark icon beside any keyword in the Generator tab to save it here.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 3: CONTENT PLAN & META GENERATOR ================= -->
+        <section id="view-content" class="tab-content space-y-6 hidden">
+            <div class="glass-panel p-6 rounded-2xl">
+                <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
+                    <i data-lucide="file-text" class="w-5 h-5 text-purple-400"></i>
+                    AI Content Strategy & Meta Optimization Report
+                </h2>
+                <p class="text-xs text-slate-400 mt-1">Generate meta titles, descriptions, content outline, and hashtags based on your seed topic or saved primary keywords.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Meta Titles & Descriptions -->
+                <div class="glass-panel p-5 rounded-2xl space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                            <i data-lucide="search" class="w-4 h-4 text-teal-400"></i>
+                            SEO Meta Titles & Snippets
+                        </h3>
+                        <button onclick="copyElementText('metaOutputArea')" class="text-xs text-teal-400 hover:underline flex items-center gap-1">
+                            <i data-lucide="copy" class="w-3 h-3"></i> Copy
+                        </button>
+                    </div>
+
+                    <div id="metaOutputArea" class="space-y-4 text-xs">
+                        <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-800 space-y-1">
+                            <span class="text-[10px] uppercase font-bold text-teal-400">Option 1 - CTR Focused Title</span>
+                            <div class="font-semibold text-slate-200 text-sm" id="metaTitle1">Complete Guide to Digital Marketing in 2026: Proven Strategies</div>
+                            <p class="text-slate-400 text-xs" id="metaDesc1">Master digital marketing with step-by-step frameworks, keyword optimization tools, and ROI-boosting strategies designed for modern creators.</p>
+                        </div>
+
+                        <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-800 space-y-1">
+                            <span class="text-[10px] uppercase font-bold text-indigo-400">Option 2 - Intent Focused Title</span>
+                            <div class="font-semibold text-slate-200 text-sm" id="metaTitle2">Best Digital Marketing Tools & Tactics | Step-by-Step Tutorial</div>
+                            <p class="text-slate-400 text-xs" id="metaDesc2">Looking to scale online? Learn how to implement high-converting digital marketing campaigns today with actionable keyword intelligence.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- YouTube Tags & Social Hashtags -->
+                <div class="glass-panel p-5 rounded-2xl space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                            <i data-lucide="hash" class="w-4 h-4 text-indigo-400"></i>
+                            Social Hashtags & YouTube Tags
+                        </h3>
+                        <button onclick="copyElementText('hashtagOutput')" class="text-xs text-indigo-400 hover:underline flex items-center gap-1">
+                            <i data-lucide="copy" class="w-3 h-3"></i> Copy All
+                        </button>
+                    </div>
+
+                    <div id="hashtagOutput" class="space-y-3 text-xs">
+                        <div>
+                            <span class="text-slate-400 block mb-1 font-medium">Recommended Hashtags (Instagram / FB / TikTok):</span>
+                            <div class="flex flex-wrap gap-1.5" id="hashtagContainer">
+                                <span class="px-2 py-1 bg-slate-900 text-teal-300 rounded border border-slate-800">#DigitalMarketing</span>
+                                <span class="px-2 py-1 bg-slate-900 text-teal-300 rounded border border-slate-800">#SEOTips</span>
+                                <span class="px-2 py-1 bg-slate-900 text-teal-300 rounded border border-slate-800">#ContentStrategy</span>
+                                <span class="px-2 py-1 bg-slate-900 text-teal-300 rounded border border-slate-800">#MarketingStrategy</span>
+                                <span class="px-2 py-1 bg-slate-900 text-teal-300 rounded border border-slate-800">#KeywordResearch</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <span class="text-slate-400 block mb-1 font-medium">YouTube Video Tag List (Comma Separated):</span>
+                            <textarea id="ytTagBox" readonly class="w-full h-20 bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-slate-300 text-xs focus:outline-none">digital marketing guide, seo tips 2026, keyword research tutorial, rank on google, content marketing strategy, small business seo</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Outline Structure -->
+                <div class="glass-panel p-5 rounded-2xl lg:col-span-2 space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                            <i data-lucide="list-tree" class="w-4 h-4 text-purple-400"></i>
+                            Recommended Article / Video Content Outline
+                        </h3>
+                        <button onclick="copyElementText('outlineContainer')" class="text-xs text-purple-400 hover:underline flex items-center gap-1">
+                            <i data-lucide="copy" class="w-3 h-3"></i> Copy Outline
+                        </button>
+                    </div>
+
+                    <div id="outlineContainer" class="space-y-3 text-xs text-slate-300 bg-slate-900/60 p-4 rounded-xl border border-slate-800 font-mono">
+                        <div class="text-teal-300 font-bold">H1: Ultimate Guide to <span class="outlineTopic">Digital Marketing</span> in 2026</div>
+                        <div class="pl-4 border-l-2 border-slate-700 space-y-2">
+                            <div><strong class="text-slate-200">H2: Introduction & Why Topic Matters</strong></div>
+                            <div><strong class="text-slate-200">H2: Key Concepts & Fundamentals</strong>
+                                <div class="pl-4 text-slate-400">H3: Understanding Core Principles</div>
+                                <div class="pl-4 text-slate-400">H3: Avoiding Common Mistakes</div>
+                            </div>
+                            <div><strong class="text-slate-200">H2: Step-by-Step Execution Plan</strong></div>
+                            <div><strong class="text-slate-200">H2: Recommended Tools & Metrics to Track</strong></div>
+                            <div><strong class="text-slate-200">H2: Conclusion & FAQ</strong></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 4: API CONFIG & SOURCE DISCLOSURE ================= -->
+        <section id="view-api" class="tab-content space-y-6 hidden">
+            <div class="glass-panel p-6 rounded-2xl space-y-4">
+                <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
+                    <i data-lucide="database" class="w-5 h-5 text-teal-400"></i>
+                    Data Source Transparency & Gemini API Configuration
+                </h2>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    KeywordPilot AI prioritizes strict metric integrity. In compliance with modern SEO standard rules, estimated metrics generated by language models are clearly distinguished from direct API database metrics.
+                </p>
+
+                <!-- Gemini API Box -->
+                <div class="bg-slate-900/90 p-5 rounded-xl border border-slate-800 space-y-3">
+                    <h3 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                        <i data-lucide="key" class="w-4 h-4 text-amber-400"></i>
+                        Google Gemini API Key Integration (Zero Backend / Direct Browser)
+                    </h3>
+                    <p class="text-xs text-slate-400">
+                        Enter your own Gemini API key to activate live generative AI keyword expansion. Your key is stored locally inside your browser's <code class="text-teal-400">localStorage</code> and never sent to any external proxy.
+                    </p>
+                    <div class="flex gap-2 max-w-xl">
+                        <input type="password" id="geminiApiKeyInput" placeholder="AIzaSy..." 
+                            class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-teal-500">
+                        <button onclick="saveApiKey()" class="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-xs font-semibold transition">
+                            Save Key
+                        </button>
+                        <button onclick="clearApiKey()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs transition">
+                            Clear
+                        </button>
+                    </div>
+                    <p class="text-[11px] text-slate-500">If left blank, KeywordPilot AI automatically falls back to built-in algorithmic simulation mode.</p>
+                </div>
+
+                <!-- API Adapter Info -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                    <div class="p-4 bg-slate-900/60 rounded-xl border border-slate-800 text-xs space-y-2">
+                        <span class="font-bold text-teal-400 uppercase text-[10px]">AI Algorithmic Simulation</span>
+                        <p class="text-slate-300">Free built-in engine uses linguistic parsing, country weightings, and platform rules to produce research clusters with realistic difficulty scores.</p>
+                    </div>
+
+                    <div class="p-4 bg-slate-900/60 rounded-xl border border-slate-800 text-xs space-y-2">
+                        <span class="font-bold text-indigo-400 uppercase text-[10px]">External Data Provider Adapter</span>
+                        <p class="text-slate-300">Optionally connect DataForSEO, SEMrush, or Google Ads Keyword Planner endpoints for live clickstream volume verification.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-slate-800 bg-slate-900/80 py-4 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <div>KeywordPilot AI &copy; 2026 • Free AI SEO Keyword Research Tool</div>
+            <div class="flex items-center space-x-4">
+                <span class="text-slate-600">Privacy First</span>
+                <span class="text-slate-600">No Web Scraping Policy</span>
+                <a href="#view-api" onclick="switchTab('api')" class="text-teal-400 hover:underline">API Setup</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <!-- MAIN APP JAVASCRIPT LOGIC -->
+    <script>
+        // ================= APP STATE =================
+        const state = {
+            currentTab: 'generator',
+            apiKey: localStorage.getItem('kp_gemini_key') || '',
+            keywords: [],
+            filteredKeywords: [],
+            savedKeywords: JSON.parse(localStorage.getItem('kp_saved_keywords') || '[]'),
+            seed: '',
+            sortColumn: 'volume',
+            sortDirection: 'desc'
+        };
+
+        // ================= INIT ON LOAD =================
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            updateApiStatusBadge();
+            renderSavedKeywords();
+            
+            // Check key input
+            if(state.apiKey) {
+                document.getElementById('geminiApiKeyInput').value = state.apiKey;
+            }
+        });
+
+        // ================= TAB NAVIGATION =================
+        function switchTab(tabId) {
+            state.currentTab = tabId;
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('border-teal-400', 'text-teal-400');
+                el.classList.add('border-transparent', 'text-slate-400');
+            });
+
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            if(activeBtn) {
+                activeBtn.classList.remove('border-transparent', 'text-slate-400');
+                activeBtn.classList.add('border-teal-400', 'text-teal-400');
+            }
+        }
+
+        // ================= API SETTINGS & BADGE =================
+        function updateApiStatusBadge() {
+            const dot = document.getElementById('apiStatusDot');
+            const txt = document.getElementById('apiStatusText');
+            if (state.apiKey) {
+                dot.className = "w-2.5 h-2.5 rounded-full bg-teal-400 shadow-sm shadow-teal-400";
+                txt.innerText = "Gemini AI Live Mode";
+            } else {
+                dot.className = "w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse";
+                txt.innerText = "Demo Simulation Mode";
+            }
+        }
+
+        function saveApiKey() {
+            const key = document.getElementById('geminiApiKeyInput').value.trim();
+            if(!key) return showToast('Please enter a valid API key', 'warning');
+            state.apiKey = key;
+            localStorage.setItem('kp_gemini_key', key);
+            updateApiStatusBadge();
+            showToast('Gemini API key saved successfully!', 'success');
+        }
+
+        function clearApiKey() {
+            state.apiKey = '';
+            localStorage.removeItem('kp_gemini_key');
+            document.getElementById('geminiApiKeyInput').value = '';
+            updateApiStatusBadge();
+            showToast('API key removed. Reverted to Demo Simulation.', 'info');
+        }
+
+        function openSettingsModal() {
+            switchTab('api');
+        }
+
+        // ================= KEYWORD GENERATION ENGINE =================
+        async function handleGenerate(e) {
+            e.preventDefault();
+            const seed = document.getElementById('seedTopic').value.trim();
+            if(!seed) return showToast('Please enter a seed keyword or topic', 'warning');
+
+            state.seed = seed;
+            const platform = document.getElementById('targetPlatform').value;
+            const country = document.getElementById('targetCountry').value;
+            const language = document.getElementById('targetLanguage').value;
+            const intent = document.getElementById('targetIntent').value;
+            const count = parseInt(document.getElementById('keywordCount').value);
+            const industry = document.getElementById('targetIndustry').value;
+            const audience = document.getElementById('targetAudience').value;
+
+            // UI Loading state
+            document.getElementById('loadingState').classList.remove('hidden');
+            document.getElementById('resultsDashboard').classList.add('hidden');
+            document.getElementById('generateBtn').disabled = true;
+
+            try {
+                let generatedData = [];
+                if (state.apiKey) {
+                    generatedData = await fetchKeywordsFromGemini(seed, platform, country, language, intent, count, industry, audience);
+                } else {
+                    // Fallback to algorithmic simulation
+                    await new Promise(r => setTimeout(r, 1200)); // Simulate AI latency
+                    generatedData = generateAlgorithmicKeywords(seed, platform, country, intent, count);
+                }
+
+                state.keywords = generatedData;
+                state.filteredKeywords = [...state.keywords];
+                
+                // Update charts & stats
+                renderResultsDashboard();
+                updateContentPlanTab(seed);
+
+                document.getElementById('loadingState').classList.add('hidden');
+                document.getElementById('resultsDashboard').classList.remove('hidden');
+                showToast(`Generated ${state.keywords.length} keywords for "${seed}"`, 'success');
+            } catch (error) {
+                console.error(error);
+                showToast('API call failed. Falling back to algorithmic generator.', 'error');
+                state.keywords = generateAlgorithmicKeywords(seed, platform, country, intent, count);
+                state.filteredKeywords = [...state.keywords];
+                renderResultsDashboard();
+                document.getElementById('loadingState').classList.add('hidden');
+                document.getElementById('resultsDashboard').classList.remove('hidden');
+            } finally {
+                document.getElementById('generateBtn').disabled = false;
+            }
+        }
+
+        // ================= GEMINI API DIRECT INTEGRATION =================
+        async function fetchKeywordsFromGemini(seed, platform, country, language, intent, count, industry, audience) {
+            const systemPrompt = `You are a world-class senior SEO strategist and keyword researcher. 
+Generate a structured JSON array of keyword objects based on user target parameters.
+The output MUST be valid JSON only. No markdown formatting outside the JSON array.`;
+
+            const prompt = `Generate ${count} highly relevant SEO keyword ideas for the topic: "${seed}".
+Platform: ${platform}. Country: ${country}. Language: ${language}. Intent Focus: ${intent}. Niche: ${industry}. Audience: ${audience}.
+
+Return ONLY a JSON array with objects containing these fields:
+- "keyword": (string)
+- "category": ("Primary", "Secondary", "Long-Tail", or "Question")
+- "intent": ("Informational", "Commercial", "Transactional", or "Navigational")
+- "volume": (estimated monthly search volume integer, e.g. 1200)
+- "difficulty": (integer 0-100)
+- "cpc": (float dollar amount, e.g. 1.45)
+- "relevance": (integer 1-100 score)
+- "rationale": (short 1-sentence reason why this keyword is valuable)
+`;
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${state.apiKey}`;
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] },
+                    generationConfig: { responseMimeType: "application/json" }
+                })
+            });
+
+            const data = await response.json();
+            const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if(!rawText) throw new Error("Invalid API response format");
+
+            const parsed = JSON.parse(rawText);
+            return parsed.map((item, idx) => ({
+                id: `kw_${Date.now()}_${idx}`,
+                keyword: item.keyword,
+                category: item.category || 'Long-Tail',
+                intent: item.intent || 'Informational',
+                volume: item.volume || Math.floor(Math.random() * 2000) + 100,
+                difficulty: item.difficulty || Math.floor(Math.random() * 60) + 20,
+                cpc: item.cpc || 0.85,
+                relevance: item.relevance || 85,
+                rationale: item.rationale || 'High relevance to core niche topics.',
+                selected: false
+            }));
+        }
+
+        // ================= ALGORITHMIC DEMO GENERATOR =================
+        function generateAlgorithmicKeywords(seed, platform, country, targetIntent, count) {
+            const modifiers = {
+                Primary: ["best", "top", "guide", "services", "online", "course", "tips", "strategy", "tools", "agency"],
+                Secondary: ["for beginners", "2026 guide", "cheap", "free", "platform", "checklist", "examples", "template", "software", "pricing"],
+                LongTail: ["how to start", "step by step tutorial", "without experience", "for small business", "near me", "versus competitors", "automated workflow"],
+                Question: ["what is", "how does", "why use", "is it worth", "how much does it cost", "can you do"]
+            };
+
+            const intents = ["Informational", "Commercial", "Transactional", "Navigational"];
+            const list = [];
+
+            // Seed variations
+            list.push({
+                id: `kw_0`,
+                keyword: seed,
+                category: 'Primary',
+                intent: targetIntent === 'All Intents' ? 'Commercial' : targetIntent,
+                volume: Math.floor(Math.random() * 8000) + 2000,
+                difficulty: Math.floor(Math.random() * 35) + 55,
+                cpc: parseFloat((Math.random() * 3 + 1.2).toFixed(2)),
+                relevance: 100,
+                rationale: 'Exact seed keyword with maximum head search volume.',
+                selected: false
+            });
+
+            for(let i = 1; i < count; i++) {
+                let category = 'Secondary';
+                if(i % 4 === 0) category = 'Question';
+                else if(i % 3 === 0) category = 'Long-Tail';
+
+                const modGroup = modifiers[category] || modifiers.Secondary;
+                const mod = modGroup[Math.floor(Math.random() * modGroup.length)];
+                
+                let kwText = "";
+                if(category === 'Question') {
+                    kwText = `${mod} ${seed}?`;
+                } else {
+                    kwText = i % 2 === 0 ? `${mod} ${seed}` : `${seed} ${mod}`;
+                }
+
+                const intentChoice = targetIntent === 'All Intents' ? intents[Math.floor(Math.random() * intents.length)] : targetIntent;
+                const diff = category === 'Long-Tail' ? Math.floor(Math.random() * 30) + 15 : Math.floor(Math.random() * 50) + 25;
+
+                list.push({
+                    id: `kw_${i}`,
+                    keyword: kwText.toLowerCase(),
+                    category: category,
+                    intent: intentChoice,
+                    volume: category === 'Long-Tail' ? Math.floor(Math.random() * 900) + 80 : Math.floor(Math.random() * 4000) + 300,
+                    difficulty: diff,
+                    cpc: parseFloat((Math.random() * 2.5 + 0.3).toFixed(2)),
+                    relevance: Math.floor(Math.random() * 20) + 80,
+                    rationale: `${category} intent match with balanced competition ratio for ${country}.`,
+                    selected: false
+                });
+            }
+
+            return list;
+        }
+
+        // ================= DASHBOARD RENDERING & CHARTS =================
+        let intentChartInstance = null;
+        let scatterChartInstance = null;
+
+        function renderResultsDashboard() {
+            const data = state.filteredKeywords;
+
+            // Summary Stats
+            document.getElementById('statTotalCount').innerText = data.length;
+            
+            const avgDiff = Math.round(data.reduce((a, b) => a + b.difficulty, 0) / (data.length || 1));
+            document.getElementById('statAvgDiff').innerText = `${avgDiff}/100`;
+
+            const highVal = data.filter(k => k.difficulty <= 40 && k.volume >= 400).length;
+            document.getElementById('statHighValueCount').innerText = highVal;
+
+            const totalVol = data.reduce((a, b) => a + b.volume, 0);
+            document.getElementById('statTotalVol').innerText = totalVol.toLocaleString();
+
+            // Render Table & Charts
+            renderTable();
+            renderCharts();
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('keywordTableBody');
+            tbody.innerHTML = '';
+
+            if (state.filteredKeywords.length === 0) {
+                document.getElementById('noResultsMsg').classList.remove('hidden');
+                return;
+            } else {
+                document.getElementById('noResultsMsg').classList.add('hidden');
+            }
+
+            state.filteredKeywords.forEach(kw => {
+                const isSaved = state.savedKeywords.some(s => s.keyword === kw.keyword);
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-800/50 transition";
+
+                // Difficulty color badge
+                let diffColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+                if(kw.difficulty > 65) diffColor = "bg-rose-500/10 text-rose-400 border-rose-500/20";
+                else if(kw.difficulty > 40) diffColor = "bg-amber-500/10 text-amber-400 border-amber-500/20";
+
+                // Intent Badge
+                let intentBg = "bg-slate-800 text-slate-300";
+                if(kw.intent === 'Commercial') intentBg = "bg-indigo-500/20 text-indigo-300";
+                if(kw.intent === 'Transactional') intentBg = "bg-teal-500/20 text-teal-300";
+
+                tr.innerHTML = `
+                    <td class="p-3.5 text-center">
+                        <input type="checkbox" ${kw.selected ? 'checked' : ''} onchange="toggleSelectKeyword('${kw.id}')" class="rounded bg-slate-800 border-slate-700 accent-teal-500">
+                    </td>
+                    <td class="p-3.5 font-medium text-slate-100">
+                        <div class="flex items-center space-x-2">
+                            <span>${kw.keyword}</span>
+                        </div>
+                    </td>
+                    <td class="p-3.5"><span class="px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 text-[10px]">${kw.category}</span></td>
+                    <td class="p-3.5"><span class="px-2 py-0.5 rounded ${intentBg} text-[10px] font-medium">${kw.intent}</span></td>
+                    <td class="p-3.5 font-mono text-slate-200">${kw.volume.toLocaleString()}</td>
+                    <td class="p-3.5"><span class="px-2 py-0.5 rounded border text-[10px] font-bold ${diffColor}">${kw.difficulty} / 100</span></td>
+                    <td class="p-3.5 font-mono text-slate-300">$${kw.cpc.toFixed(2)}</td>
+                    <td class="p-3.5 text-slate-400 text-[11px] max-w-xs truncate tooltip">
+                        ${kw.rationale}
+                        <span class="tooltiptext">${kw.rationale}</span>
+                    </td>
+                    <td class="p-3.5 text-right space-x-1">
+                        <button onclick="toggleSaveKeyword('${kw.id}')" class="p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-amber-400 transition" title="Save to Workspace">
+                            <i data-lucide="bookmark" class="w-4 h-4 ${isSaved ? 'text-amber-400 fill-amber-400' : ''}"></i>
+                        </button>
+                        <button onclick="copySingleKeyword('${kw.keyword}')" class="p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-teal-400 transition" title="Copy Keyword">
+                            <i data-lucide="copy" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            lucide.createIcons();
+        }
+
+        function renderCharts() {
+            // Intent Pie Chart
+            const intentsCount = { Informational: 0, Commercial: 0, Transactional: 0, Navigational: 0 };
+            state.filteredKeywords.forEach(k => {
+                if(intentsCount[k.intent] !== undefined) intentsCount[k.intent]++;
+                else intentsCount.Informational++;
+            });
+
+            const ctx1 = document.getElementById('intentChart').getContext('2d');
+            if(intentChartInstance) intentChartInstance.destroy();
+            intentChartInstance = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(intentsCount),
+                    datasets: [{
+                        data: Object.values(intentsCount),
+                        backgroundColor: ['#2dd4bf', '#818cf8', '#f59e0b', '#ec4899'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right', labels: { color: '#94a3b8', font: { size: 10 } } }
+                    }
+                }
+            });
+
+            // Scatter / Scatter-like Volume vs Difficulty Chart
+            const ctx2 = document.getElementById('scatterChart').getContext('2d');
+            if(scatterChartInstance) scatterChartInstance.destroy();
+
+            const points = state.filteredKeywords.map(k => ({ x: k.difficulty, y: k.volume }));
+
+            scatterChartInstance = new Chart(ctx2, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Keywords (Difficulty vs Search Vol)',
+                        data: points,
+                        backgroundColor: 'rgba(45, 212, 191, 0.7)',
+                        pointRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { title: { display: true, text: 'Difficulty (KD)', color: '#64748b' }, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+                        y: { title: { display: true, text: 'Search Volume', color: '#64748b' }, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        // ================= FILTERS & SORTING =================
+        function updateDiffLabel(val) {
+            document.getElementById('diffValLabel').innerText = val;
+        }
+
+        function applyFilters() {
+            const text = document.getElementById('filterText').value.toLowerCase();
+            const intent = document.getElementById('filterIntent').value;
+            const cat = document.getElementById('filterCategory').value;
+            const maxDiff = parseInt(document.getElementById('filterDiff').value);
+
+            state.filteredKeywords = state.keywords.filter(k => {
+                const matchText = k.keyword.toLowerCase().includes(text);
+                const matchIntent = intent === 'ALL' || k.intent === intent;
+                const matchCat = cat === 'ALL' || k.category === cat;
+                const matchDiff = k.difficulty <= maxDiff;
+                return matchText && matchIntent && matchCat && matchDiff;
+            });
+
+            renderResultsDashboard();
+        }
+
+        function sortData(col) {
+            if(state.sortColumn === col) {
+                state.sortDirection = state.sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                state.sortColumn = col;
+                state.sortDirection = 'desc';
+            }
+
+            state.filteredKeywords.sort((a, b) => {
+                let valA = a[col];
+                let valB = b[col];
+                if(typeof valA === 'string') {
+                    return state.sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                }
+                return state.sortDirection === 'asc' ? valA - valB : valB - valA;
+            });
+
+            renderTable();
+        }
+
+        // ================= SELECTION & BULK ACTIONS =================
+        function toggleSelectKeyword(id) {
+            const kw = state.keywords.find(k => k.id === id);
+            if(kw) kw.selected = !kw.selected;
+        }
+
+        function toggleSelectAll(chk) {
+            state.filteredKeywords.forEach(k => k.selected = chk.checked);
+            renderTable();
+        }
+
+        function copySingleKeyword(text) {
+            copyToClipboard(text);
+            showToast(`Copied "${text}" to clipboard`, 'info');
+        }
+
+        function copySelectedKeywords() {
+            const selected = state.filteredKeywords.filter(k => k.selected).map(k => k.keyword);
+            if(selected.length === 0) return showToast('No keywords selected', 'warning');
+            copyToClipboard(selected.join('\n'));
+            showToast(`Copied ${selected.length} keywords to clipboard`, 'success');
+        }
+
+        function exportToCSV() {
+            if(state.filteredKeywords.length === 0) return showToast('No data to export', 'warning');
+
+            const headers = ["Keyword", "Category", "Intent", "Est Search Volume", "Difficulty", "CPC ($)", "Rationale"];
+            const rows = state.filteredKeywords.map(k => [
+                `"${k.keyword}"`,
+                `"${k.category}"`,
+                `"${k.intent}"`,
+                k.volume,
+                k.difficulty,
+                k.cpc,
+                `"${k.rationale.replace(/"/g, '""')}"`
+            ]);
+
+            const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `KeywordPilot_${state.seed || 'export'}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('CSV export downloaded successfully', 'success');
+        }
+
+        // ================= SAVED WORKSPACE LOGIC =================
+        function toggleSaveKeyword(id) {
+            const item = state.keywords.find(k => k.id === id);
+            if(!item) return;
+
+            const idx = state.savedKeywords.findIndex(s => s.keyword === item.keyword);
+            if(idx > -1) {
+                state.savedKeywords.splice(idx, 1);
+                showToast('Removed from saved strategy', 'info');
+            } else {
+                state.savedKeywords.push(item);
+                showToast('Saved to strategy workspace', 'success');
+            }
+
+            localStorage.setItem('kp_saved_keywords', JSON.stringify(state.savedKeywords));
+            renderTable();
+            renderSavedKeywords();
+        }
+
+        function renderSavedKeywords() {
+            const countBadge = document.getElementById('savedBadgeCount');
+            countBadge.innerText = state.savedKeywords.length;
+
+            const tbody = document.getElementById('savedTableBody');
+            tbody.innerHTML = '';
+
+            if(state.savedKeywords.length === 0) {
+                document.getElementById('savedEmptyState').classList.remove('hidden');
+                return;
+            } else {
+                document.getElementById('savedEmptyState').classList.add('hidden');
+            }
+
+            state.savedKeywords.forEach((kw, idx) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-800/50";
+                tr.innerHTML = `
+                    <td class="p-3.5 font-medium text-slate-100">${kw.keyword}</td>
+                    <td class="p-3.5 text-slate-400">${kw.category}</td>
+                    <td class="p-3.5"><span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px]">${kw.intent}</span></td>
+                    <td class="p-3.5 font-mono text-slate-200">${kw.volume.toLocaleString()}</td>
+                    <td class="p-3.5 font-bold text-teal-400">${kw.difficulty}/100</td>
+                    <td class="p-3.5 font-mono text-slate-300">$${kw.cpc.toFixed(2)}</td>
+                    <td class="p-3.5 text-right">
+                        <button onclick="removeSavedKeyword(${idx})" class="text-slate-500 hover:text-rose-400 p-1">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
+
+        function removeSavedKeyword(idx) {
+            state.savedKeywords.splice(idx, 1);
+            localStorage.setItem('kp_saved_keywords', JSON.stringify(state.savedKeywords));
+            renderSavedKeywords();
+            renderTable();
+            showToast('Item removed', 'info');
+        }
+
+        function clearSavedKeywords() {
+            if(!confirm('Clear all saved keywords?')) return;
+            state.savedKeywords = [];
+            localStorage.removeItem('kp_saved_keywords');
+            renderSavedKeywords();
+            renderTable();
+            showToast('Saved list cleared', 'info');
+        }
+
+        function copySavedKeywords() {
+            if(state.savedKeywords.length === 0) return showToast('Workspace is empty', 'warning');
+            const txt = state.savedKeywords.map(s => s.keyword).join('\n');
+            copyToClipboard(txt);
+            showToast('Copied saved list to clipboard', 'success');
+        }
+
+        // ================= CONTENT PLAN GENERATOR UPDATE =================
+        function updateContentPlanTab(seed) {
+            document.querySelectorAll('.outlineTopic').forEach(e => e.innerText = seed);
+            
+            // Generate dynamic titles
+            document.getElementById('metaTitle1').innerText = `Complete Guide to ${capitalize(seed)} in 2026: Proven Strategies`;
+            document.getElementById('metaDesc1').innerText = `Master ${seed} with step-by-step frameworks, keyword optimization tools, and ROI-boosting strategies designed for modern creators.`;
+
+            document.getElementById('metaTitle2').innerText = `Best ${capitalize(seed)} Tools & Tactics | Step-by-Step Tutorial`;
+            document.getElementById('metaDesc2').innerText = `Looking to scale online? Learn how to implement high-converting ${seed} campaigns today with actionable keyword intelligence.`;
+
+            // Hashtags
+            const tagContainer = document.getElementById('hashtagContainer');
+            const cleanSeed = seed.replace(/[^a-zA-Z0-0]/g, '');
+            tagContainer.innerHTML = `
+                <span class="px-2 py-1 bg-slate-900 text-teal-300 rounded border border-slate-800">#${cleanSeed}</span>
+                <span class="px-2 py-1 bg-slate-900 text-teal-300 rounded border border-slate-800">#${cleanSeed}Tips</span>
+                <span class="px-2 py-1 bg-slate-900 text-teal-300 rounded border border-slate-800">#${cleanSeed}Strategy</span>
+                <span class="px-2 py-1 bg-slate-900 text-teal-300 rounded border border-slate-800">#ContentCreator</span>
+                <span class="px-2 py-1 bg-slate-900 text-teal-300 rounded border border-slate-800">#SEO2026</span>
+            `;
+
+            document.getElementById('ytTagBox').value = `${seed}, ${seed} guide, how to ${seed}, ${seed} tutorial, best ${seed} tips, ${seed} strategy 2026`;
+        }
+
+        // ================= UTILS & HELPERS =================
+        function capitalize(str) {
+            return str.replace(/\b\w/g, l => l.toUpperCase());
+        }
+
+        function copyToClipboard(text) {
+            const dummy = document.createElement("textarea");
+            document.body.appendChild(dummy);
+            dummy.value = text;
+            dummy.select();
+            document.execCommand("copy");
+            document.body.removeChild(dummy);
+        }
+
+        function copyElementText(id) {
+            const el = document.getElementById(id);
+            if(el) {
+                copyToClipboard(el.innerText);
+                showToast('Copied section to clipboard', 'info');
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+
+            let colors = "bg-slate-800 border-slate-700 text-slate-200";
+            if(type === 'success') colors = "bg-emerald-950/90 border-emerald-500/40 text-emerald-200";
+            if(type === 'warning') colors = "bg-amber-950/90 border-amber-500/40 text-amber-200";
+            if(type === 'error') colors = "bg-rose-950/90 border-rose-500/40 text-rose-200";
+
+            toast.className = `px-4 py-2.5 rounded-xl border shadow-xl text-xs flex items-center space-x-2 transition-all duration-300 transform translate-y-2 pointer-events-auto ${colors}`;
+            toast.innerHTML = `<span>${message}</span>`;
+
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', '-translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
